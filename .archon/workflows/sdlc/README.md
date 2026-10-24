@@ -54,7 +54,9 @@ caused, or a conflict with the base, goes back to the implementer in the next
 round, which merges the base on a conflict, and that correction is reviewed before
 CI runs again. A flake or infrastructure failure outside the change gets one re-run
 of its failed jobs before the agent answers, recorded as `rerun`; any other red ends
-the run not ready, and a defect outside the change becomes a discovery.
+the run not ready, and a defect outside the change becomes a discovery. A re-run
+the issue's rulings require (the `reruns` in delivery's `requirements` input) runs
+even on green, and the pull request is not ready without it.
 
 Unresolved review threads on the pull request are work too, whoever opened them: a
 person, a review bot, or no one in a project without outside reviewers. After CI,
@@ -183,7 +185,9 @@ unreadable creation record. An unresolved
 creation claim reports `pr_create_unresolved`; the build queue refuses to select
 another PR or branch until a newer triage settles it: it names the reconciled PR, or
 names none and the next round opens one. `update-pr-body` corrects the
-description's stale claims and links the issue once the rounds end. A standalone
+description's stale claims and links the issue once the rounds end, with the keyword
+the `link` node decided: `Closes` only when the latest review left nothing open and
+no ruling in the `requirements` input keeps the issue open. A standalone
 `archon-pr` leaves a continued pull request's description as its author left it:
 its `publish_description` input defaults off. `publish-review` upserts the one marked review
 comment, and deliver's `threads` posts the thread replies `settle-threads`
@@ -577,7 +581,12 @@ which a project extends with its own `.archon/sdlc/policy/build.md`.
   ruling, and the item continues from it. The queue never reads the answer's prose for
   a decision. The `ruling` script writes the
   choice's ruling and the person's words into the issue body as one dated "Current
-  scope" section, reads it back, and records the answer: a `continue` choice starts
+  scope" section, reads it back, and records the answer. Each declared choice also
+  types what the rulings require of the pull request: whether it may close its issue
+  (`link`: `closes` or `refs`) and which CI re-runs it needs even on green (`reruns`).
+  The chosen one replaces `facts.requirements` on the work item (`other` keeps it);
+  delivery's `link` node, its CI agent and the merge sweep act on it, and nothing
+  reads the ruling's prose for it. A `continue` choice starts
   the item's next round at once, a detached `archon-build-queue --input number=<n>`
   run on the run config (`--config-from-run`) and the `retriage_as` and
   `round_limit` the answered run started with, and a
@@ -724,7 +733,10 @@ then the project's file, whose lines win where the two conflict.
   approval pinned to the head it approved, and
   the last twenty decisions), and a return sets the build record to `next` with the
   brief, so the build queue picks it up.
-- **Merged issues.** A pull request that links its issue with `Refs #N` merges
+- **Merged issues.** Before a merge, the sweep changes `Refs #N` to `Closes #N` only
+  when the Ready review left nothing open and the item's `link` fact, from
+  `facts.requirements`, is `Closes`: a ruling that keeps the issue open makes it
+  `Refs`. A pull request that links its issue with `Refs #N` merges
   without closing it, and the issue keeps its intake stage, so the build queue could
   claim it again. When `retriage_as` names a maintainer login, `retriage` reads the
   issue of each build item whose pull request merged, by the gate this run or before

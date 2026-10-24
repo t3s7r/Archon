@@ -21,6 +21,7 @@ import {
 } from '../../workflows/sdlc/.shared/build';
 import { BUILD_QUEUE_SELECTIONS } from '../../workflows/sdlc/.shared/launch';
 import { CONFIDENCES, checkAttention, chosen, renderAttention, withOther } from '../../workflows/sdlc/.shared/queue';
+import { RULING_LINKS, type RulingRequirements } from '../../workflows/sdlc/.shared/requirements';
 import { stateGet, statePut } from '../../workflows/sdlc/.shared/state';
 import {
   applyDecision,
@@ -194,7 +195,7 @@ describe('the build record', () => {
     type AttentionSchema = {
       properties: {
         recommendation: { properties: { confidence: Enum } };
-        choices: { items: { properties: { effect: Enum } } };
+        choices: { items: { properties: { effect: Enum; requires: { properties: { link: Enum } } } } };
       };
     };
     const workflow = Bun.YAML.parse(
@@ -215,6 +216,7 @@ describe('the build record', () => {
     for (const id of ['route', 'answer']) {
       const attention = field(id, 'attention')?.properties;
       expect(attention?.choices.items.properties.effect.enum).toEqual([...BUILD_EFFECTS]);
+      expect(attention?.choices.items.properties.requires.properties.link.enum).toEqual([...RULING_LINKS]);
       expect(attention?.recommendation.properties.confidence.enum).toEqual([...CONFIDENCES]);
     }
   });
@@ -849,6 +851,19 @@ describe('the build queue scripts', () => {
     expect(build).toMatchObject({ status: 'next', decisions: [{ decision: 'answered: continue', answer: { choice: 'relax', text: 'Only for this item.' } }] });
     expect(build?.brief).toContain('continue PR 42 under the ruling');
     expect(build?.brief).toContain(heading);
+  }, 60_000);
+
+  test("a chosen ruling's requirements are recorded on the work item, and the next round's facts hand them to delivery", () => {
+    const keepOpen: RulingRequirements = { link: 'refs', reruns: ['the Windows CLI shard, once'] };
+    const attention = { ...ATTENTION, choices: ATTENTION.choices.map(choice => ({ ...choice, requires: keepOpen })) };
+    const at = install();
+    seed(at, triaged(CLAIMED, record({ status: 'asking', brief: '' })));
+    expect(ok(run(at, 'facts', {}))).toMatchObject({ requirements: { link: 'closes', reruns: [] } });
+    seed(at, { ...(stored(at).value as WorkItem), ...CLAIMED });
+    const asked = JSON.stringify({ attention, brief: 'continue PR 42 under the ruling', by: 'stop' });
+    ok(run(at, 'ruling', { INPUTS_ITEM: JSON.stringify(SUBJECT), INPUTS_ASKED: asked, INPUTS_CHOICE: 'relax', INPUTS_TEXT: '' }));
+    expect(stored(at).value?.facts.requirements).toEqual(keepOpen);
+    expect(ok(run(at, 'facts', {}))).toMatchObject({ requirements: keepOpen });
   }, 60_000);
 
   test("the queue owns 'other': an agent-declared one is replaced by the queue's", () => {

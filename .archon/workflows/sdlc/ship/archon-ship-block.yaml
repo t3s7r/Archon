@@ -46,6 +46,11 @@ inputs:
       forwarded unchanged to delivery. When an open pull request already has that
       head, the push updates it instead of opening another. Empty opens it from the
       checkout's branch.
+  requirements:
+    default: ""
+    description: >-
+      What the issue's maintainer rulings require of the pull request, as the caller
+      recorded them, forwarded unchanged to delivery. Empty when no ruling set any.
 
 # `delivered:false` is a valid completion: an honest "no work is owed" is a
 # successful run that shipped nothing, and lifecycle status and work outcome are
@@ -141,6 +146,7 @@ nodes:
         request.
       pull_request: "$continues.output.pull_request"
       branch: "$INPUTS.branch"
+      requirements: "$INPUTS.requirements"
     # One join into delivery: the direct or continue route, a rooted investigation,
     # or a ready plan. A negative judgment skips delivery; a failed producer fails
     # the run.

@@ -10,6 +10,8 @@
  * vocabulary belongs to the queue that declares it.
  */
 
+import type { RulingRequirements } from './requirements.ts';
+
 /** One answer the person can give, and what the queue does when it is chosen. */
 export interface Choice<Effect extends string> {
   /** The id the attention answer carries: kebab-case, unique within the item. */
@@ -24,6 +26,12 @@ export interface Choice<Effect extends string> {
    * no section.
    */
   readonly ruling: string;
+  /**
+   * What the issue's rulings, this one included, require of its pull request, recorded on
+   * the work item when this is chosen. Absent on the queue's own `other`, which leaves the
+   * recorded requirements as they were.
+   */
+  readonly requires?: RulingRequirements;
 }
 
 export const CONFIDENCES = ['low', 'medium', 'high'] as const;

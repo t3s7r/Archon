@@ -23,6 +23,7 @@ import {
 } from '../../workflows/sdlc/.shared/merge';
 import { MERGE_QUEUE_SELECTIONS } from '../../workflows/sdlc/.shared/launch';
 import { withOther } from '../../workflows/sdlc/.shared/queue';
+import { RULING_LINKS, type RulingRequirements } from '../../workflows/sdlc/.shared/requirements';
 import { REVIEW_MARKER, readReviewStamp, reviewCommentBody } from '../../workflows/sdlc/.shared/review-comment';
 import { stateGet, statePut } from '../../workflows/sdlc/.shared/state';
 import { newWorkItem, parseWorkItem, type TriageFacts, type WorkItem } from '../../workflows/sdlc/.shared/workitem';
@@ -197,6 +198,8 @@ describe('the merge record and the gate', () => {
     expect((at('facts', 'path') as Enum).enum).toEqual([...MERGE_PATHS]);
     expect(at('record', 'class')?.enum).toEqual(['', ...MERGE_ASKED_BY]);
     expect(at('ruling', 'decision')?.enum).toEqual([...MERGE_EFFECTS, ...BASE_EFFECTS]);
+    const choices = ['decisions', '[]', 'attention', 'choices', '[]'];
+    expect(at('sweep', ...choices, 'requires', 'link')?.enum).toEqual([...RULING_LINKS]);
   });
 });
 
@@ -1344,6 +1347,23 @@ Object.defineProperty(Bun, 'spawnSync', { value: (argv, settings) => {
     expect(doc.facts.build?.brief).toContain(heading);
   }, 60_000);
 
+  test("the chosen ruling's requirements replace the recorded ones; 'other' keeps them", () => {
+    const keepOpen: RulingRequirements = { link: 'refs', reruns: ['the Windows CLI shard, once'] };
+    const ruled: MergeAttention = {
+      ...ATTENTION,
+      choices: ATTENTION.choices.map(choice => (choice.id === 'merge' ? { ...choice, requires: keepOpen } : choice)),
+    };
+    const at = install();
+    seed(at, item(BUILT, merge('asking'), CLAIMED));
+    const asked = (attention: MergeAttention) => JSON.stringify({ by: 'pr', item: SUBJECT, pr: PR, head: HEAD, brief: 'rework PR 42', attention });
+    ok(run(at, 'ruling', { INPUTS_ASKED: asked(ruled), INPUTS_CHOICE: 'merge', INPUTS_TEXT: '' }));
+    expect(stored(at).value?.facts.requirements).toEqual(keepOpen);
+
+    seed(at, { ...(stored(at).value as WorkItem), ...CLAIMED });
+    ok(run(at, 'ruling', { INPUTS_ASKED: asked(withOther(ruled, 'return')), INPUTS_CHOICE: 'other', INPUTS_TEXT: 'Split it first.' }));
+    expect(stored(at).value?.facts.requirements).toEqual(keepOpen);
+  }, 60_000);
+
   test("an answer on an own pull request writes no issue body and still applies its effect", () => {
     const at = install();
     const own = { repo: PR.repo, number: PR.number };
@@ -1383,6 +1403,25 @@ describe.each(['gh', 'forge'] as const)('the merge queue facts and gate on the %
     expect(output.gate).toContain('gate.ts');
     expect(stored(at).value?.claim?.run_id).toBe('run-1');
     expect(ok(on(at, 'facts', {}, { WORKFLOW_ID: 'run-2', INTAKE_RUN_STATUSES: '{"run-1":"running"}' }))).toMatchObject({ path: 'idle' });
+  }, 60_000);
+
+  test('the issue keeps a Refs link when a recorded ruling keeps it open, and may close without one, in the merge step and the PR-body step alike', () => {
+    const keepOpen: RulingRequirements = { link: 'refs', reruns: [] };
+    const linkOf = (doc: WorkItem) => {
+      const at = install();
+      seed(at, doc);
+      return (ok(on(at, 'facts')) as { items: { link: string }[] }).items[0]?.link;
+    };
+    expect(linkOf(item())).toBe('Closes');
+    expect(linkOf({ ...item(), facts: { ...item().facts, requirements: keepOpen } })).toBe('Refs');
+
+    // The PR-body step decides through the same rule, from the requirements the build queue hands delivery.
+    const bodyLink = (requirements: string, left = '[]') =>
+      JSON.parse(runPackScript('deliver/scripts/link', { inputs: { INPUTS_CONTRACT_LEFT: left, INPUTS_REQUIREMENTS: requirements } }).stdout) as { keyword: string };
+    expect(bodyLink('').keyword).toBe('Closes');
+    expect(bodyLink(JSON.stringify(keepOpen)).keyword).toBe('Refs');
+    expect(bodyLink('', '["acceptance: the console shows it"]').keyword).toBe('Refs');
+    expect(bodyLink('', '').keyword).toBe('Refs');
   }, 60_000);
 
   test('a review comment from anyone but a listed maintainer is no verdict', () => {

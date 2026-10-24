@@ -8,6 +8,7 @@ facts:
   url: "https://github.com/example/repo/issues/7"
   record: null
   brief: "continue: fix the open review finding"
+  requirements: { link: closes, reruns: [] }
   rounds: []
   at_cap: false
   policy_defaults: "/stub/policy"

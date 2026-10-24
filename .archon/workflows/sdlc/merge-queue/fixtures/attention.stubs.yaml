@@ -29,8 +29,8 @@ sweep:
         why: "stub: what either answer changes"
         recommendation: { choice: merge, why: "stub: why", evidence: "stub: evidence", confidence: medium, would_change: "stub: what would change it" }
         choices:
-          - { id: merge, label: "stub: merge it", does: "stub: merges once the gate passes", effect: merge, ruling: "" }
-          - { id: park, label: "stub: park it", does: "stub: stops working it", effect: park, ruling: "" }
+          - { id: merge, label: "stub: merge it", does: "stub: merges once the gate passes", effect: merge, ruling: "", requires: { link: closes, reruns: [] } }
+          - { id: park, label: "stub: park it", does: "stub: stops working it", effect: park, ruling: "", requires: { link: closes, reruns: [] } }
         if_unanswered: "stub: it waits"
         links: ["https://github.com/example/repo/pull/42"]
   base: { summary: "stub: dev is green", reran: false, attention: null }

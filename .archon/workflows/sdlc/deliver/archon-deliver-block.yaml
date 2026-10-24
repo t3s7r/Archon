@@ -47,6 +47,12 @@ inputs:
       The part of an approved multi-part plan this delivery is, forwarded
       unchanged to every review in the rounds. archon-review's `part` input
       owns its shape. Empty delivers the whole contract.
+  requirements:
+    default: ""
+    description: >-
+      What the issue's maintainer rulings require of the pull request, as JSON
+      `{"link": "closes" | "refs", "reruns": [...]}`: whether it may close its issue,
+      and the CI reruns it needs even on green. Empty when no ruling set any.
   # Error review can be forced on or off; `auto` leaves it to review's route agent.
   errors:
     default: "auto"
@@ -258,6 +264,7 @@ nodes:
           with:
             pr: "$pr.output"
             source: "$forge.output.source"
+            requirements: "$INPUTS.requirements"
           # `&&` short-circuits, so a skipped node's output is never read.
           when: "$review.output.ready == true && $simplify.output.findings == false || $review.output.ready == true && $simplify.output.findings == true && $rereview.output.ready == true"
           output_format:
@@ -333,20 +340,39 @@ nodes:
               summary: { type: string }
             required: [round, done, ready, reason, pr_url, prior_report, light_review, contract_left, summary]
 
+  # How the pull request links its issue: closing only when the latest review left
+  # nothing open and no ruling keeps the issue open (.shared/requirements.ts).
+  - id: link
+    script: link
+    runtime: bun
+    depends_on: [rounds]
+    when: "$rounds.output.pr_url != ''"
+    with:
+      contract_left: "$rounds.output.contract_left"
+      requirements: "$INPUTS.requirements"
+    output_format:
+      type: object
+      properties:
+        keyword: { type: string, enum: [Closes, Refs] }
+        why: { type: string }
+      required: [keyword, why]
+
   # Corrections and the base merge can falsify claims the description made when the
   # draft opened, and an implementer can pass red the description must disclose. One
   # agent reads the live description and the final diff, and edits only what is no
-  # longer true. It also links the issue by the latest review's coverage: closing
-  # only when nothing is left. It runs once the rounds have ended, never per round;
-  # content a round prepared for the description is that round's pr step's write.
+  # longer true. It also links the issue with link's keyword. It runs once the
+  # rounds have ended, never per round; content a round prepared for the
+  # description is that round's pr step's write.
   - id: update-pr-body
     command: update-pr-body
     model: medium
-    depends_on: [rounds]
+    depends_on: [rounds, link]
     when: "$rounds.output.pr_url != ''"
     with:
       pr: "$rounds.output.pr_url"
       contract_left: "$rounds.output.contract_left"
+      link: "$link.output.keyword"
+      link_why: "$link.output.why"
       source: "$forge.output.source"
     output_format:
       type: object

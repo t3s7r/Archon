@@ -9,6 +9,7 @@ facts:
   url: "https://github.com/example/repo/issues/7"
   record: null
   brief: ""
+  requirements: { link: closes, reruns: [] }
   rounds: []
   at_cap: false
   policy_defaults: "/stub/policy"

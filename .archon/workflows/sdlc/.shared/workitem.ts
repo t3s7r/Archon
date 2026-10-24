@@ -21,6 +21,7 @@ import type { BuildRecord } from './build.ts';
 import type { Closure } from './close.ts';
 import { record, type QualifiedPr } from './forge.ts';
 import type { MergeRecord } from './merge.ts';
+import type { RulingRequirements } from './requirements.ts';
 import { note } from './io.ts';
 import {
   type LabelVerdict,
@@ -126,6 +127,8 @@ export interface WorkItem {
     readonly triage?: TriageFacts;
     readonly build?: BuildRecord;
     readonly merge?: MergeRecord;
+    /** What the latest chosen ruling requires of the pull request (./requirements.ts). */
+    readonly requirements?: RulingRequirements;
     /** A maintainer's own pull request the merge queue enrolled; no build round made it. */
     readonly own_pr?: { readonly url: string; readonly at: string };
   };

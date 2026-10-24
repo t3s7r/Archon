@@ -36,6 +36,7 @@ import {
 import { POLICY_DEFAULTS } from '../../.shared/policy-defaults.ts';
 import { readMaintainerList } from '../../.shared/maintainers.ts';
 import { enrollOwnPrs, isOwnPr } from '../../.shared/own-prs.ts';
+import { issueLink, requirementsOf } from '../../.shared/requirements.ts';
 import { claimNext, updateClaimed, type Pickup, type WorkItem } from '../../.shared/workitem.ts';
 
 interface Item {
@@ -47,6 +48,11 @@ interface Item {
   readonly record: MergeRecord | null;
   /** A maintainer's own pull request the queue enrolled: no issue and no build round behind it. */
   readonly own_pr: boolean;
+  /**
+   * The keyword a merge may link the issue with when its Ready review left nothing open:
+   * `Closes`, or `Refs` when a recorded ruling keeps the issue open.
+   */
+  readonly link: 'Closes' | 'Refs';
 }
 
 function positive(name: string, value: string): number {
@@ -222,6 +228,7 @@ function main(): void {
       facts,
       record: current.facts.merge ?? null,
       own_pr: isOwnPr(doc),
+      link: issueLink([], requirementsOf(current)),
     });
   }
   const gate = [

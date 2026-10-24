@@ -121,7 +121,16 @@ nodes:
                         does: &choice_does { type: string, pattern: '\S' }
                         effect: { type: string, enum: [merge, return, park] }
                         ruling: { type: string }
-                      required: [id, label, does, effect, ruling]
+                        # What the issue's rulings, this one included, require of the pull
+                        # request; ruling records it on the work item when this is chosen.
+                        requires:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            link: { type: string, enum: [closes, refs] }
+                            reruns: { type: array, items: { type: string, pattern: '\S' } }
+                          required: [link, reruns]
+                      required: [id, label, does, effect, ruling, requires]
                   if_unanswered: &if_unanswered { type: string, pattern: '\S' }
                   links: &links { type: array, items: { type: string } }
                 required: [what, why, recommendation, choices, if_unanswered, links]

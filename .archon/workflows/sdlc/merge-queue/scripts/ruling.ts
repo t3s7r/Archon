@@ -10,7 +10,9 @@
  * choice's ruling and the person's words are written into the issue body as one dated
  * "Current scope" section first, as the build queue does, so a returned round reads
  * them as the contract; an enrolled own pull request has no issue body, so its ruling
- * stays on its work item. On a red default branch the only answer is `hold`: the queue
+ * stays on its work item. The choice's declared requirements, how the pull request links
+ * its issue and which reruns it needs, are recorded on the work item for the steps that
+ * act on them. On a red default branch the only answer is `hold`: the queue
  * merges nothing while the branch is red, which every sweep reads from the forge, so
  * nothing is written. A `merge` then starts a sweep at once, on the run config and input
  * selections this run started with, and a `return` the item's next build-queue round, on
@@ -28,6 +30,7 @@ import { launchDetached, type MergeQueueSelections } from '../../.shared/launch.
 import { appendSection } from '../../.shared/issue.ts';
 import { answeredMergeDecision, type MergeAsked, type MergeAttention, type MergeDecisionEntry, type MergeStatus, withMerge } from '../../.shared/merge.ts';
 import { chosen, rulingHeading } from '../../.shared/queue.ts';
+import { withRequirements } from '../../.shared/requirements.ts';
 import { updateClaimed } from '../../.shared/workitem.ts';
 
 const STATUS = { merge: 'waiting', return: 'returned', park: 'parked' } as const satisfies Record<
@@ -107,7 +110,8 @@ function main(): void {
     reran: false,
   };
   updateClaimed(asked.item, runId, doc => {
-    const recorded = withMerge(doc, {
+    const answered = choice.requires === undefined ? doc : withRequirements(doc, choice.requires);
+    const recorded = withMerge(answered, {
       at,
       run_id: runId,
       entry,
