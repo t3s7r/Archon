@@ -99,8 +99,9 @@ const ATTENTION: BuildAttention = {
       does: 'continues with gates downstream',
       effect: 'continue',
       ruling: 'Synthesis and publish may gate on head_matches too.',
+      requires: null,
     },
-    { id: 'park', label: 'Park it', does: 'stops working the item', effect: 'park', ruling: '' },
+    { id: 'park', label: 'Park it', does: 'stops working the item', effect: 'park', ruling: '', requires: null },
   ],
   if_unanswered: 'The item waits; nothing else is blocked.',
   links: ['https://ghe.example.com/example/repo/pull/42'],
@@ -867,7 +868,7 @@ describe('the build queue scripts', () => {
   }, 60_000);
 
   test("the queue owns 'other': an agent-declared one is replaced by the queue's", () => {
-    const declared = { ...ATTENTION, choices: [...ATTENTION.choices, { id: 'other', label: 'x', does: 'x', effect: 'park' as const, ruling: 'x' }] };
+    const declared = { ...ATTENTION, choices: [...ATTENTION.choices, { id: 'other', label: 'x', does: 'x', effect: 'park' as const, ruling: 'x', requires: null }] };
     const others = withOther(declared, 'continue').choices.filter(choice => choice.id === 'other');
     expect(others).toHaveLength(1);
     expect(others[0]).toMatchObject({ effect: 'continue', ruling: '' });

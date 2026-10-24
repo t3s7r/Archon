@@ -449,9 +449,9 @@ const ATTENTION: MergeAttention = {
   why: 'Merging changes every pack run; holding it leaves the fix out.',
   recommendation: { choice: 'merge', why: 'reviewed Ready', evidence: 'the review report', confidence: 'medium', would_change: 'a failing bench' },
   choices: [
-    { id: 'merge', label: 'Merge it', does: 'merges it once the gate passes at this head', effect: 'merge', ruling: '' },
-    { id: 'return', label: 'Rework it', does: 'sends it back to the build queue', effect: 'return', ruling: 'Keep the old prompt wording.' },
-    { id: 'park', label: 'Park it', does: 'stops working it', effect: 'park', ruling: '' },
+    { id: 'merge', label: 'Merge it', does: 'merges it once the gate passes at this head', effect: 'merge', ruling: '', requires: null },
+    { id: 'return', label: 'Rework it', does: 'sends it back to the build queue', effect: 'return', ruling: 'Keep the old prompt wording.', requires: null },
+    { id: 'park', label: 'Park it', does: 'stops working it', effect: 'park', ruling: '', requires: null },
   ],
   if_unanswered: 'It waits; nothing else is blocked.',
   links: [PR_URL],
@@ -1163,7 +1163,7 @@ Object.defineProperty(Bun, 'spawnSync', { value: (argv, settings) => {
     const at = install();
     seed(at, item(BUILT, undefined, CLAIMED));
     seed(at, { ...item(BUILT, undefined, CLAIMED), subject: OTHER });
-    const rework = { id: 'revise-scope', label: 'Rework it', does: 'sends it back', effect: 'return', ruling: '' } as const;
+    const rework = { id: 'revise-scope', label: 'Rework it', does: 'sends it back', effect: 'return', ruling: '', requires: null } as const;
     const attention: MergeAttention = {
       ...ATTENTION,
       recommendation: { ...ATTENTION.recommendation, choice: recommended },

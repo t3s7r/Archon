@@ -62,7 +62,7 @@ function main(): void {
       ? `${asked.brief}\n\nThe maintainer chose "${choice.label}": ${choice.does}${heading === '' ? '' : ` The ruling is the issue body's "${heading}" section, which is part of the contract.`}`
       : '';
   updateClaimed(item, runId, doc =>
-    withBuild(choice.requires === undefined ? doc : withRequirements(doc, choice.requires), {
+    withBuild(choice.requires === null ? doc : withRequirements(doc, choice.requires), {
       at,
       run_id: runId,
       round: null,

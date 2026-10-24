@@ -158,9 +158,10 @@ nodes:
                   effect: { type: string, enum: [continue, park] }
                   ruling: { type: string }
                   # What the issue's rulings, this one included, require of its pull
-                  # request; ruling records it on the work item when this is chosen.
+                  # request; ruling records it on the work item when this is chosen. Null
+                  # leaves the recorded requirements as they were.
                   requires:
-                    type: object
+                    type: [object, 'null']
                     additionalProperties: false
                     properties:
                       link: { type: string, enum: [closes, refs] }

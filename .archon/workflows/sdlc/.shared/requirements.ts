@@ -6,8 +6,8 @@
  * The agent that writes a ruling's choice also declares these values, reading the issue
  * body's dated sections with that ruling added, so nothing downstream reads a ruling's
  * prose for them. The queue records the chosen values on the work item
- * (`facts.requirements`), each choice replacing the last; the queue's own `other` choice
- * declares none and leaves them as they were. The build queue hands them to delivery, and
+ * (`facts.requirements`), each choice replacing the last; a choice that declares null,
+ * as the queue's own `other` does, leaves them as they were. The build queue hands them to delivery, and
  * the merge queue reads them from the work item. `issueLink` is the one closing decision
  * those steps share.
  */

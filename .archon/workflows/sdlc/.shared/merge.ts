@@ -15,14 +15,14 @@
 import { forgeSource, invokeForge, record, REMEDY, type QualifiedPr } from './forge.ts';
 import { isOwnPr } from './own-prs.ts';
 import { ghGraphql, ghIssueComments, viewPr } from './pr.ts';
-import type { Attention, DecisionEntry } from './queue.ts';
+import type { Attention, DecisionEntry, RulingChoice } from './queue.ts';
 import { readReviewStamp } from './review-comment.ts';
 import type { Pickup, WorkItem } from './workitem.ts';
 
 /** What a merge choice does when a person picks it; archon-merge-queue.yaml declares the same enum. */
 export const MERGE_EFFECTS = ['merge', 'return', 'park'] as const;
 export type MergeEffect = (typeof MERGE_EFFECTS)[number];
-export type MergeAttention = Attention<MergeEffect>;
+export type MergeAttention = Attention<MergeEffect, RulingChoice<MergeEffect>>;
 
 /** The one answer to a red default branch: the queue holds merges until it is green again. */
 export const BASE_EFFECTS = ['hold'] as const;

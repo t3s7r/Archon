@@ -26,12 +26,16 @@ export interface Choice<Effect extends string> {
    * no section.
    */
   readonly ruling: string;
+}
+
+/** A choice on an issue's work item, which also types what the issue's rulings require. */
+export interface RulingChoice<Effect extends string> extends Choice<Effect> {
   /**
    * What the issue's rulings, this one included, require of its pull request, recorded on
-   * the work item when this is chosen. Absent on the queue's own `other`, which leaves the
-   * recorded requirements as they were.
+   * the work item when this is chosen. Null leaves the recorded requirements as they were:
+   * the queue's own `other`, and a choice whose empty ruling changes nothing.
    */
-  readonly requires?: RulingRequirements;
+  readonly requires: RulingRequirements | null;
 }
 
 export const CONFIDENCES = ['low', 'medium', 'high'] as const;
@@ -45,13 +49,13 @@ export interface Recommendation {
   readonly would_change: string;
 }
 
-export interface Attention<Effect extends string> {
+export interface Attention<Effect extends string, C extends Choice<Effect> = Choice<Effect>> {
   /** The item and the decision, in plain words. */
   readonly what: string;
   /** What happens if it is decided either way. */
   readonly why: string;
   readonly recommendation: Recommendation;
-  readonly choices: readonly Choice<Effect>[];
+  readonly choices: readonly C[];
   /** Whether the item waits, blocks others, or goes stale while nobody answers. */
   readonly if_unanswered: string;
   /** The pull request, the review report and the run. */
@@ -91,10 +95,10 @@ export const OTHER = 'other';
  * does with it, normally its continue-the-work effect.
  */
 export function withOther<Effect extends string>(
-  attention: Attention<Effect>,
+  attention: Attention<Effect, RulingChoice<Effect>>,
   effect: Effect,
   does = 'Do what the answer text says. The text is written into the issue body as the ruling, and the next round works from it.'
-): Attention<Effect> {
+): Attention<Effect, RulingChoice<Effect>> {
   // The queue owns `other`: an agent-declared one is replaced, so its effect is always this one.
   return {
     ...attention,
@@ -106,16 +110,17 @@ export function withOther<Effect extends string>(
         does,
         effect,
         ruling: '',
+        requires: null,
       },
     ],
   };
 }
 
 /** The declared choice an answer named; an id that was never offered refuses. */
-export function chosen<Effect extends string>(
-  attention: Attention<Effect>,
+export function chosen<Effect extends string, C extends Choice<Effect>>(
+  attention: Attention<Effect, C>,
   id: string
-): Choice<Effect> {
+): C {
   const choice = attention.choices.find(entry => entry.id === id);
   if (choice === undefined) throw new Error(`the answer "${id}" is not one of the choices`);
   return choice;

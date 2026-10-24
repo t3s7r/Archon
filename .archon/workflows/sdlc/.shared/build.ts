@@ -10,7 +10,7 @@
 import { type QualifiedPr, sameRepo } from './forge.ts';
 import { note } from './io.ts';
 import { PR_CREATE_UNRESOLVED } from './pr.ts';
-import type { Attention, DecisionEntry } from './queue.ts';
+import type { Attention, DecisionEntry, RulingChoice } from './queue.ts';
 import { stateDocuments, statePut } from './state.ts';
 import {
   claimable,
@@ -30,7 +30,7 @@ import {
 /** What a build choice does when a person picks it; archon-build-queue.yaml declares the same enum. */
 export const BUILD_EFFECTS = ['continue', 'park'] as const;
 export type BuildEffect = (typeof BUILD_EFFECTS)[number];
-export type BuildAttention = Attention<BuildEffect>;
+export type BuildAttention = Attention<BuildEffect, RulingChoice<BuildEffect>>;
 
 /** The decision each agent can declare; archon-build-queue.yaml declares the same enums. */
 export const ROUTE_DECISIONS = ['launch', 'ask', 'ready'] as const;

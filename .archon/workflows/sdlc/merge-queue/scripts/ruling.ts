@@ -110,7 +110,7 @@ function main(): void {
     reran: false,
   };
   updateClaimed(asked.item, runId, doc => {
-    const answered = choice.requires === undefined ? doc : withRequirements(doc, choice.requires);
+    const answered = choice.requires === null ? doc : withRequirements(doc, choice.requires);
     const recorded = withMerge(answered, {
       at,
       run_id: runId,

@@ -584,7 +584,7 @@ which a project extends with its own `.archon/sdlc/policy/build.md`.
   scope" section, reads it back, and records the answer. Each declared choice also
   types what the rulings require of the pull request: whether it may close its issue
   (`link`: `closes` or `refs`) and which CI re-runs it needs even on green (`reruns`).
-  The chosen one replaces `facts.requirements` on the work item (`other` keeps it);
+  The chosen one replaces `facts.requirements` on the work item (a null one, as on `other`, keeps it);
   delivery's `link` node, its CI agent and the merge sweep act on it, and nothing
   reads the ruling's prose for it. A `continue` choice starts
   the item's next round at once, a detached `archon-build-queue --input number=<n>`
