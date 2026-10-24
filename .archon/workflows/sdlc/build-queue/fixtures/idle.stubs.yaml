@@ -7,7 +7,6 @@ facts:
   url: ""
   record: null
   brief: ""
-  requirements: { link: closes, reruns: [] }
   rounds: []
   at_cap: false
   policy_defaults: "/stub/policy"

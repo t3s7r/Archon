@@ -15,7 +15,7 @@
 import { forgeSource, invokeForge, record, REMEDY, type QualifiedPr } from './forge.ts';
 import { isOwnPr } from './own-prs.ts';
 import { ghGraphql, ghIssueComments, viewPr } from './pr.ts';
-import type { Attention, DecisionEntry, RulingChoice } from './queue.ts';
+import type { Attention, Choice, DecisionEntry, RulingChoice } from './queue.ts';
 import { readReviewStamp } from './review-comment.ts';
 import type { Pickup, WorkItem } from './workitem.ts';
 
@@ -23,6 +23,8 @@ import type { Pickup, WorkItem } from './workitem.ts';
 export const MERGE_EFFECTS = ['merge', 'return', 'park'] as const;
 export type MergeEffect = (typeof MERGE_EFFECTS)[number];
 export type MergeAttention = Attention<MergeEffect, RulingChoice<MergeEffect>>;
+/** A merge question as asked: the sweep's choices plus the queue's own `other`, which types no requirements. */
+export type AskedMergeAttention = Attention<MergeEffect, RulingChoice<MergeEffect> | Choice<MergeEffect>>;
 
 /** The one answer to a red default branch: the queue holds merges until it is green again. */
 export const BASE_EFFECTS = ['hold'] as const;
@@ -46,7 +48,7 @@ export type MergeAsked =
       readonly pr: QualifiedPr;
       readonly head: string;
       readonly brief: string;
-      readonly attention: MergeAttention;
+      readonly attention: AskedMergeAttention;
     }
   | { readonly by: Extract<MergeAskedBy, 'base'>; readonly attention: BaseAttention };
 export const MERGE_METHODS = ['squash', 'merge'] as const;

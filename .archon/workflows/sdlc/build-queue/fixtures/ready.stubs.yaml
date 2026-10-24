@@ -7,7 +7,6 @@ facts:
   url: "https://github.com/example/repo/issues/7"
   record: null
   brief: ""
-  requirements: { link: closes, reruns: [] }
   rounds: []
   at_cap: false
   policy_defaults: /stub/policy
@@ -24,6 +23,7 @@ route:
   brief: "stub: already delivered"
   reason: "stub: Ready and green at the head"
   attention: null
+  requirements: { link: closes, reruns: [] }
 apply:
   decision: ready
   summary: "stub: marked ready without a round"

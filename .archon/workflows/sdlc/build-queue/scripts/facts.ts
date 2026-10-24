@@ -9,9 +9,6 @@
  * It also resolves the item's pull request as the forge reports it now. An open one
  * whose head is in the item's repository is the candidate the round continues;
  * otherwise the round opens one from a new branch named after the issue.
- *
- * And it reads what the item's rulings require of the pull request, which the round's
- * delivery acts on.
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -29,7 +26,6 @@ import { artifactsDir, emit, refuse, text, trimmed } from '../../.shared/io.ts';
 import { viewIssue } from '../../.shared/issue.ts';
 import { POLICY_DEFAULTS } from '../../.shared/policy-defaults.ts';
 import { viewPr } from '../../.shared/pr.ts';
-import { NO_RULING, requirementsOf } from '../../.shared/requirements.ts';
 import { claimNext, type WorkItem, withPlainReports } from '../../.shared/workitem.ts';
 
 function positive(name: string, value: string): number {
@@ -89,7 +85,6 @@ function emitItem(
     url,
     record: doc === null ? null : withPlainReports(doc),
     brief: doc?.facts.build?.brief ?? '',
-    requirements: requirementsOf(doc),
     rounds,
     at_cap: atCap,
     policy_defaults: POLICY_DEFAULTS,
@@ -119,7 +114,6 @@ function main(): void {
       url: '',
       record: null,
       brief: '',
-      requirements: NO_RULING,
       rounds: [],
       at_cap: false,
       policy_defaults: POLICY_DEFAULTS,

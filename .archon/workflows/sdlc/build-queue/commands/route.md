@@ -20,6 +20,10 @@ The item: `$INPUTS.url`. Its issue, title and body, is in `$ARTIFACTS_DIR/build/
 4. **Launch, or ask.** Launch a clear case. Ask when the policy says the case is unclear.
 5. **Which pull request the round continues.** On launch, declare `continues`: `$INPUTS.continues` to continue the candidate, or null to start fresh. Null when the contract supersedes the candidate. A fresh round starts from the current base on a new branch and opens a new pull request; the checkout never carries the superseded pull request's head. Declare no other number; on ask and ready, `continues` is null.
 
+## The requirements
+
+Declare `requirements` on every decision: what the issue body's dated scope sections, whoever wrote them, require of the pull request beyond its contract, as they stand now, the latest section superseding earlier ones. `link` is `refs` when they say the pull request references the issue without closing it, otherwise `closes`. `reruns` lists each CI re-run they require even when CI is green, naming the check and how many times, otherwise empty. The queue records them on the work item and hands them to the round: the step that links the issue, the CI step and the merge queue act on them, and nothing reads the sections' prose for them.
+
 ## The brief
 
 The brief is the target of `archon-ship`: one message another run starts from cold. It names the issue by URL and says the issue body, including its dated scope sections, is the contract. It does not restate or widen the contract. Add only what the run cannot learn from the body:
@@ -39,7 +43,7 @@ Only on ask; null on launch or ready. A maintainer reads it without opening the 
 - `what`: the item and the decision, in plain words.
 - `why`: what happens if it is decided either way.
 - `recommendation`: the id of the choice you recommend, `why`, the `evidence` it rests on, your `confidence`, and what evidence `would_change` it.
-- `choices`: at least two, each a kebab-case `id`, a short `label`, what it `does`, its `effect` (`continue` launches the next run from the brief; `park` stops the queue working the item until a re-triage), and the `ruling` written into the issue body as a dated scope section when it is chosen. Write the ruling as the contract sentence the next run reads, such as "Downstream nodes may gate on head_matches too"; leave it empty when the choice changes no scope. The queue adds `other` itself, for an answer none of your choices covers; don't declare it. Each choice also declares `requires`, what the issue's dated scope sections, with this choice's ruling added, require of the pull request beyond its contract: `link` is `refs` when they say the pull request references its issue without closing it, otherwise `closes`; `reruns` lists each CI re-run they require even when CI is green, naming the check and how many times, otherwise empty. The queue records it when the choice is chosen, and the steps that link the issue and judge CI act on it; nothing reads a ruling's prose for it. Declare `requires` null only on a choice whose `ruling` is empty: the recorded requirements then stand.
+- `choices`: at least two, each a kebab-case `id`, a short `label`, what it `does`, its `effect` (`continue` launches the next run from the brief; `park` stops the queue working the item until a re-triage), and the `ruling` written into the issue body as a dated scope section when it is chosen. Write the ruling as the contract sentence the next run reads, such as "Downstream nodes may gate on head_matches too"; leave it empty when the choice changes no scope. The queue adds `other` itself, for an answer none of your choices covers; don't declare it.
 - `if_unanswered`: whether the item waits, blocks other work, or goes stale as the base moves.
 - `links`: the issue, and any pull request, report or run the decision rests on.
 

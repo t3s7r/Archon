@@ -34,6 +34,7 @@ import {
   type BaseAttention,
   MERGE_PATHS,
   type MergeAsked,
+  type AskedMergeAttention,
   type MergeAttention,
   type MergeDecisionEntry,
   type MergeRecord,
@@ -56,7 +57,7 @@ import { updateClaimed, type WorkItem } from '../../.shared/workitem.ts';
  * The asked item with the queue's `other`, whose effect is what the item can take: a
  * return for a build-owned pull request with a brief, a park otherwise.
  */
-function withQueueOther(attention: MergeAttention, item: Item, brief: string): MergeAttention {
+function withQueueOther(attention: MergeAttention, item: Item, brief: string): AskedMergeAttention {
   if (item.own_pr === true) {
     return withOther(attention, 'park', 'Do what the answer text says. The text is recorded as the ruling on this pull request. Stops queue work until a later sweep observes a different head from the head asked about. Nothing goes to the build queue.');
   }

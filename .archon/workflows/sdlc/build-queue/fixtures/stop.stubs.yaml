@@ -11,7 +11,6 @@ facts:
   url: "https://github.com/example/repo/issues/7"
   record: null
   brief: ""
-  requirements: { link: closes, reruns: [] }
   rounds: []
   at_cap: false
   policy_defaults: "/stub/policy"
@@ -28,6 +27,7 @@ route:
   brief: "stub: continue PR 8"
   reason: "stub: the body is a contract"
   attention: null
+  requirements: { link: closes, reruns: [] }
 checkout: { head: null, pull_request: null }
 ship__forge: { source: forge }
 ship__triage__triage:
@@ -57,8 +57,8 @@ answer:
       confidence: medium
       would_change: "stub: what would change it"
     choices:
-      - { id: narrow, label: "stub: narrow it", does: "stub: continues on the narrower scope", effect: continue, ruling: "stub: acceptance drops A4", requires: { link: refs, reruns: [] } }
-      - { id: park, label: "stub: park it", does: "stub: stops working it", effect: park, ruling: "", requires: { link: closes, reruns: [] } }
+      - { id: narrow, label: "stub: narrow it", does: "stub: continues on the narrower scope", effect: continue, ruling: "stub: acceptance drops A4" }
+      - { id: park, label: "stub: park it", does: "stub: stops working it", effect: park, ruling: "" }
     if_unanswered: "stub: the item waits"
     links: ["https://github.com/example/repo/pull/8"]
 apply:

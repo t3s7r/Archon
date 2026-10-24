@@ -12,6 +12,7 @@ import {
   MERGE_ASKED_BY,
   MERGE_EFFECTS,
   MERGE_PATHS,
+  type AskedMergeAttention,
   type MergeAttention,
   type MergeRecord,
   type MergeSettled,
@@ -23,7 +24,7 @@ import {
 } from '../../workflows/sdlc/.shared/merge';
 import { MERGE_QUEUE_SELECTIONS } from '../../workflows/sdlc/.shared/launch';
 import { withOther } from '../../workflows/sdlc/.shared/queue';
-import { RULING_LINKS, type RulingRequirements } from '../../workflows/sdlc/.shared/requirements';
+import { NO_RULING, RULING_LINKS, type RulingRequirements } from '../../workflows/sdlc/.shared/requirements';
 import { REVIEW_MARKER, readReviewStamp, reviewCommentBody } from '../../workflows/sdlc/.shared/review-comment';
 import { stateGet, statePut } from '../../workflows/sdlc/.shared/state';
 import { newWorkItem, parseWorkItem, type TriageFacts, type WorkItem } from '../../workflows/sdlc/.shared/workitem';
@@ -449,9 +450,9 @@ const ATTENTION: MergeAttention = {
   why: 'Merging changes every pack run; holding it leaves the fix out.',
   recommendation: { choice: 'merge', why: 'reviewed Ready', evidence: 'the review report', confidence: 'medium', would_change: 'a failing bench' },
   choices: [
-    { id: 'merge', label: 'Merge it', does: 'merges it once the gate passes at this head', effect: 'merge', ruling: '', requires: null },
-    { id: 'return', label: 'Rework it', does: 'sends it back to the build queue', effect: 'return', ruling: 'Keep the old prompt wording.', requires: null },
-    { id: 'park', label: 'Park it', does: 'stops working it', effect: 'park', ruling: '', requires: null },
+    { id: 'merge', label: 'Merge it', does: 'merges it once the gate passes at this head', effect: 'merge', ruling: '', requires: NO_RULING },
+    { id: 'return', label: 'Rework it', does: 'sends it back to the build queue', effect: 'return', ruling: 'Keep the old prompt wording.', requires: NO_RULING },
+    { id: 'park', label: 'Park it', does: 'stops working it', effect: 'park', ruling: '', requires: NO_RULING },
   ],
   if_unanswered: 'It waits; nothing else is blocked.',
   links: [PR_URL],
@@ -1163,7 +1164,7 @@ Object.defineProperty(Bun, 'spawnSync', { value: (argv, settings) => {
     const at = install();
     seed(at, item(BUILT, undefined, CLAIMED));
     seed(at, { ...item(BUILT, undefined, CLAIMED), subject: OTHER });
-    const rework = { id: 'revise-scope', label: 'Rework it', does: 'sends it back', effect: 'return', ruling: '', requires: null } as const;
+    const rework = { id: 'revise-scope', label: 'Rework it', does: 'sends it back', effect: 'return', ruling: '', requires: NO_RULING } as const;
     const attention: MergeAttention = {
       ...ATTENTION,
       recommendation: { ...ATTENTION.recommendation, choice: recommended },
@@ -1355,7 +1356,7 @@ Object.defineProperty(Bun, 'spawnSync', { value: (argv, settings) => {
     };
     const at = install();
     seed(at, item(BUILT, merge('asking'), CLAIMED));
-    const asked = (attention: MergeAttention) => JSON.stringify({ by: 'pr', item: SUBJECT, pr: PR, head: HEAD, brief: 'rework PR 42', attention });
+    const asked = (attention: AskedMergeAttention) => JSON.stringify({ by: 'pr', item: SUBJECT, pr: PR, head: HEAD, brief: 'rework PR 42', attention });
     ok(run(at, 'ruling', { INPUTS_ASKED: asked(ruled), INPUTS_CHOICE: 'merge', INPUTS_TEXT: '' }));
     expect(stored(at).value?.facts.requirements).toEqual(keepOpen);
 

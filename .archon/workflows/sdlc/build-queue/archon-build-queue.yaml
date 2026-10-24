@@ -72,13 +72,6 @@ nodes:
         record: { type: [object, 'null'] }
         # What the next launch starts from: the answer to the last stop, or empty.
         brief: { type: string }
-        # What the item's chosen rulings require of its pull request (.shared/requirements.ts).
-        requirements:
-          type: object
-          properties:
-            link: { type: string, enum: [closes, refs] }
-            reruns: { type: array, items: { type: string } }
-          required: [link, reruns]
         # The rounds before this run's, from the work item.
         rounds: { type: array, items: { type: object } }
         # Whether this run's round reaches round_limit rounds since the scope changed.
@@ -94,7 +87,7 @@ nodes:
         # The branch the round opens its pull request from when route continues none: a
         # new build/<issue>-<slug>-<run>. Empty with no item.
         branch: { type: string }
-      required: [path, item, url, record, brief, requirements, rounds, at_cap, policy_defaults, pull_request, continues, branch]
+      required: [path, item, url, record, brief, rounds, at_cap, policy_defaults, pull_request, continues, branch]
 
   # Routes the item and writes the brief the round starts from. The prompt names the
   # playwright-cli skill for a bug that needs a browser. It is not a `skills:` entry:
@@ -129,6 +122,15 @@ nodes:
         # choice launches.
         brief: { type: string, pattern: '\S' }
         reason: { type: string, pattern: '\S' }
+        # What the issue's dated scope sections require of the pull request now
+        # (.shared/requirements.ts); apply records it, and the round's delivery acts on it.
+        requirements:
+          type: object
+          additionalProperties: false
+          properties:
+            link: { type: string, enum: [closes, refs] }
+            reruns: { type: array, items: { type: string, pattern: '\S' } }
+          required: [link, reruns]
         attention: &attention
           type: [object, 'null']
           additionalProperties: false
@@ -157,21 +159,11 @@ nodes:
                   does: { type: string, pattern: '\S' }
                   effect: { type: string, enum: [continue, park] }
                   ruling: { type: string }
-                  # What the issue's rulings, this one included, require of its pull
-                  # request; ruling records it on the work item when this is chosen. Null
-                  # leaves the recorded requirements as they were.
-                  requires:
-                    type: [object, 'null']
-                    additionalProperties: false
-                    properties:
-                      link: { type: string, enum: [closes, refs] }
-                      reruns: { type: array, items: { type: string, pattern: '\S' } }
-                    required: [link, reruns]
-                required: [id, label, does, effect, ruling, requires]
+                required: [id, label, does, effect, ruling]
             if_unanswered: { type: string, pattern: '\S' }
             links: { type: array, items: { type: string } }
           required: [what, why, recommendation, choices, if_unanswered, links]
-      required: [decision, continues, ready_head, brief, reason, attention]
+      required: [decision, continues, ready_head, brief, reason, requirements, attention]
 
   # A round that continues a pull request (route's declaration) starts from that pull
   # request's head, not from the branch the run's checkout was cut from, so its publish
@@ -208,7 +200,7 @@ nodes:
       target: "$route.output.brief"
       pull_request: "$checkout.output.pull_request"
       branch: "$facts.output.branch"
-      requirements: "$facts.output.requirements"
+      requirements: "$route.output.requirements"
 
   - id: answer
     command: answer
@@ -249,7 +241,7 @@ nodes:
       required: [decision, brief, push, reason, attention]
 
   # Checks the decision, performs the writes it declared and reads each one back:
-  # the push, then the work item.
+  # the push, then the work item, with route's requirements recorded on it.
   - id: apply
     script: apply
     runtime: bun

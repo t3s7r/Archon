@@ -529,7 +529,11 @@ which a project extends with its own `.archon/sdlc/policy/build.md`.
   waits for the build queue. Every listed item records the revisit.
 - **Route.** The `route` agent checks that the issue body is a contract (the six
   elements, with its dated "Current scope" sections), proves a bug's symptom before
-  its first round, and writes the brief `archon-ship` starts from. A bug that needs a
+  its first round, and writes the brief `archon-ship` starts from. It also types what
+  the dated sections, whoever wrote them, require of the pull request: whether it may
+  close its issue (`link`: `closes` or `refs`) and which CI re-runs it needs even on
+  green (`reruns`). Apply records them as `facts.requirements`, and the round's
+  delivery receives them; nothing reads the sections' prose for them. A bug that needs a
   browser is reproduced with the playwright-cli skill, which the prompt names rather
   than a `skills:` entry, because a provider that cannot load named skills refuses a
   whole run that declares one.
@@ -581,12 +585,7 @@ which a project extends with its own `.archon/sdlc/policy/build.md`.
   ruling, and the item continues from it. The queue never reads the answer's prose for
   a decision. The `ruling` script writes the
   choice's ruling and the person's words into the issue body as one dated "Current
-  scope" section, reads it back, and records the answer. Each declared choice also
-  types what the rulings require of the pull request: whether it may close its issue
-  (`link`: `closes` or `refs`) and which CI re-runs it needs even on green (`reruns`).
-  The chosen one replaces `facts.requirements` on the work item (a null one, as on `other`, keeps it);
-  delivery's `link` node, its CI agent and the merge sweep act on it, and nothing
-  reads the ruling's prose for it. A `continue` choice starts
+  scope" section, reads it back, and records the answer. A `continue` choice starts
   the item's next round at once, a detached `archon-build-queue --input number=<n>`
   run on the run config (`--config-from-run`) and the `retriage_as` and
   `round_limit` the answered run started with, and a
@@ -736,7 +735,9 @@ then the project's file, whose lines win where the two conflict.
 - **Merged issues.** Before a merge, the sweep changes `Refs #N` to `Closes #N` only
   when the Ready review left nothing open and the item's `link` fact, from
   `facts.requirements`, is `Closes`: a ruling that keeps the issue open makes it
-  `Refs`. A pull request that links its issue with `Refs #N` merges
+  `Refs`. Build-queue route records them every round; each merge-queue choice types
+  them too, because a `merge` answer merges without another round, and its ruling
+  records the chosen ones. A pull request that links its issue with `Refs #N` merges
   without closing it, and the issue keeps its intake stage, so the build queue could
   claim it again. When `retriage_as` names a maintainer login, `retriage` reads the
   issue of each build item whose pull request merged, by the gate this run or before

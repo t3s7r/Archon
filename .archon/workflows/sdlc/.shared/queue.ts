@@ -28,14 +28,13 @@ export interface Choice<Effect extends string> {
   readonly ruling: string;
 }
 
-/** A choice on an issue's work item, which also types what the issue's rulings require. */
+/**
+ * A choice that also types what the issue's rulings, its own included, require of the
+ * pull request, recorded on the work item when it is chosen. The merge queue's choices
+ * are: one of them can merge without another build round reading the issue.
+ */
 export interface RulingChoice<Effect extends string> extends Choice<Effect> {
-  /**
-   * What the issue's rulings, this one included, require of its pull request, recorded on
-   * the work item when this is chosen. Null leaves the recorded requirements as they were:
-   * the queue's own `other`, and a choice whose empty ruling changes nothing.
-   */
-  readonly requires: RulingRequirements | null;
+  readonly requires: RulingRequirements;
 }
 
 export const CONFIDENCES = ['low', 'medium', 'high'] as const;
@@ -94,11 +93,11 @@ export const OTHER = 'other';
  * and that text is written into the issue body as the ruling. `effect` is what the queue
  * does with it, normally its continue-the-work effect.
  */
-export function withOther<Effect extends string>(
-  attention: Attention<Effect, RulingChoice<Effect>>,
-  effect: Effect,
+export function withOther<Effect extends string, C extends Choice<Effect>>(
+  attention: Attention<Effect, C>,
+  effect: NoInfer<Effect>,
   does = 'Do what the answer text says. The text is written into the issue body as the ruling, and the next round works from it.'
-): Attention<Effect, RulingChoice<Effect>> {
+): Attention<Effect, C | Choice<Effect>> {
   // The queue owns `other`: an agent-declared one is replaced, so its effect is always this one.
   return {
     ...attention,
@@ -110,7 +109,6 @@ export function withOther<Effect extends string>(
         does,
         effect,
         ruling: '',
-        requires: null,
       },
     ],
   };

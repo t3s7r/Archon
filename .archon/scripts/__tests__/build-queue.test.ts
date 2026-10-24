@@ -21,7 +21,7 @@ import {
 } from '../../workflows/sdlc/.shared/build';
 import { BUILD_QUEUE_SELECTIONS } from '../../workflows/sdlc/.shared/launch';
 import { CONFIDENCES, checkAttention, chosen, renderAttention, withOther } from '../../workflows/sdlc/.shared/queue';
-import { RULING_LINKS, type RulingRequirements } from '../../workflows/sdlc/.shared/requirements';
+import { NO_RULING, RULING_LINKS, type RulingRequirements } from '../../workflows/sdlc/.shared/requirements';
 import { stateGet, statePut } from '../../workflows/sdlc/.shared/state';
 import {
   applyDecision,
@@ -99,9 +99,8 @@ const ATTENTION: BuildAttention = {
       does: 'continues with gates downstream',
       effect: 'continue',
       ruling: 'Synthesis and publish may gate on head_matches too.',
-      requires: null,
     },
-    { id: 'park', label: 'Park it', does: 'stops working the item', effect: 'park', ruling: '', requires: null },
+    { id: 'park', label: 'Park it', does: 'stops working the item', effect: 'park', ruling: '' },
   ],
   if_unanswered: 'The item waits; nothing else is blocked.',
   links: ['https://ghe.example.com/example/repo/pull/42'],
@@ -196,7 +195,7 @@ describe('the build record', () => {
     type AttentionSchema = {
       properties: {
         recommendation: { properties: { confidence: Enum } };
-        choices: { items: { properties: { effect: Enum; requires: { properties: { link: Enum } } } } };
+        choices: { items: { properties: { effect: Enum } } };
       };
     };
     const workflow = Bun.YAML.parse(
@@ -214,10 +213,11 @@ describe('the build record', () => {
     expect(field('apply', 'decision')?.enum).toEqual([...APPLY_DECISIONS]);
     expect(field('apply', 'class')?.enum).toEqual(['', ...ASKED_BY]);
     expect(field('ruling', 'decision')?.enum).toEqual([...BUILD_EFFECTS]);
+    const requirements = field('route', 'requirements') as unknown as { properties: { link: Enum } } | undefined;
+    expect(requirements?.properties.link.enum).toEqual([...RULING_LINKS]);
     for (const id of ['route', 'answer']) {
       const attention = field(id, 'attention')?.properties;
       expect(attention?.choices.items.properties.effect.enum).toEqual([...BUILD_EFFECTS]);
-      expect(attention?.choices.items.properties.requires.properties.link.enum).toEqual([...RULING_LINKS]);
       expect(attention?.recommendation.properties.confidence.enum).toEqual([...CONFIDENCES]);
     }
   });
@@ -333,11 +333,11 @@ function expectNextRound(calls: string): void {
   expect(launch?.filter(arg => arg.startsWith('number='))).toEqual(['number=7']);
 }
 
-function applyInputs(answer: Record<string, unknown>, atCap = false): Record<string, string> {
+function applyInputs(answer: Record<string, unknown>, atCap = false, requirements: RulingRequirements = NO_RULING): Record<string, string> {
   return {
     INPUTS_PATH: 'route',
     INPUTS_ITEM: JSON.stringify(SUBJECT),
-    INPUTS_ROUTE: JSON.stringify({ decision: 'launch', brief: 'deliver 7', reason: 'a contract', attention: null }),
+    INPUTS_ROUTE: JSON.stringify({ decision: 'launch', brief: 'deliver 7', reason: 'a contract', requirements, attention: null }),
     INPUTS_ENDING: JSON.stringify(ENDING),
     INPUTS_ANSWER: JSON.stringify(answer),
     INPUTS_AT_CAP: String(atCap),
@@ -812,6 +812,20 @@ describe('the build queue scripts', () => {
     expect(buildWaits(doc as WorkItem)).toBe(false);
   }, 60_000);
 
+  test("a hand-written section that keeps the issue open reaches the work item and the PR-body step through route's requirements", () => {
+    // Route read the issue body's dated sections, whoever wrote them, and typed what they require.
+    const keepOpen: RulingRequirements = { link: 'refs', reruns: ['the Windows CLI shard, once'] };
+    const at = install();
+    seed(at, triaged(CLAIMED));
+    const done = { decision: 'done', brief: '', push: null, reason: 'Ready at the head and CI green', attention: null };
+    ok(run(at, 'apply', applyInputs(done, false, keepOpen)));
+    expect(stored(at).value?.facts.requirements).toEqual(keepOpen);
+    const link = runPackScript('deliver/scripts/link', {
+      inputs: { INPUTS_CONTRACT_LEFT: '[]', INPUTS_REQUIREMENTS: JSON.stringify(keepOpen) },
+    });
+    expect(JSON.parse(link.stdout)).toMatchObject({ keyword: 'Refs' });
+  }, 60_000);
+
   test('a closed pull request takes no push, and nothing is recorded', () => {
     const at = install();
     seed(at, triaged(CLAIMED));
@@ -854,21 +868,8 @@ describe('the build queue scripts', () => {
     expect(build?.brief).toContain(heading);
   }, 60_000);
 
-  test("a chosen ruling's requirements are recorded on the work item, and the next round's facts hand them to delivery", () => {
-    const keepOpen: RulingRequirements = { link: 'refs', reruns: ['the Windows CLI shard, once'] };
-    const attention = { ...ATTENTION, choices: ATTENTION.choices.map(choice => ({ ...choice, requires: keepOpen })) };
-    const at = install();
-    seed(at, triaged(CLAIMED, record({ status: 'asking', brief: '' })));
-    expect(ok(run(at, 'facts', {}))).toMatchObject({ requirements: { link: 'closes', reruns: [] } });
-    seed(at, { ...(stored(at).value as WorkItem), ...CLAIMED });
-    const asked = JSON.stringify({ attention, brief: 'continue PR 42 under the ruling', by: 'stop' });
-    ok(run(at, 'ruling', { INPUTS_ITEM: JSON.stringify(SUBJECT), INPUTS_ASKED: asked, INPUTS_CHOICE: 'relax', INPUTS_TEXT: '' }));
-    expect(stored(at).value?.facts.requirements).toEqual(keepOpen);
-    expect(ok(run(at, 'facts', {}))).toMatchObject({ requirements: keepOpen });
-  }, 60_000);
-
   test("the queue owns 'other': an agent-declared one is replaced by the queue's", () => {
-    const declared = { ...ATTENTION, choices: [...ATTENTION.choices, { id: 'other', label: 'x', does: 'x', effect: 'park' as const, ruling: 'x', requires: null }] };
+    const declared = { ...ATTENTION, choices: [...ATTENTION.choices, { id: 'other', label: 'x', does: 'x', effect: 'park' as const, ruling: 'x' }] };
     const others = withOther(declared, 'continue').choices.filter(choice => choice.id === 'other');
     expect(others).toHaveLength(1);
     expect(others[0]).toMatchObject({ effect: 'continue', ruling: '' });

@@ -3,12 +3,13 @@
  * typed values the pack's fixed steps act on: how the pull request links its issue, and
  * which CI reruns it needs even when CI is green.
  *
- * The agent that writes a ruling's choice also declares these values, reading the issue
- * body's dated sections with that ruling added, so nothing downstream reads a ruling's
- * prose for them. The queue records the chosen values on the work item
- * (`facts.requirements`), each choice replacing the last; a choice that declares null,
- * as the queue's own `other` does, leaves them as they were. The build queue hands them to delivery, and
- * the merge queue reads them from the work item. `issueLink` is the one closing decision
+ * An agent types them from the issue body's dated scope sections, whoever wrote them, so
+ * nothing downstream reads a ruling's prose for them. The build queue's route agent
+ * declares them on every decision and apply records them on the work item
+ * (`facts.requirements`), each record replacing the last; the round's delivery receives
+ * them as an input. A merge-queue choice declares them too, because a `merge` answer
+ * reaches the merge without another build round; its ruling records the chosen one. The
+ * merge queue reads them from the work item. `issueLink` is the one closing decision
  * those steps share.
  */
 

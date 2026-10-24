@@ -27,6 +27,7 @@ import { setPrDraft, viewPr } from '../../.shared/pr.ts';
 import { pushHead } from '../../.shared/push.ts';
 import { attentionOptions, checkAttention, type DecisionEntry, renderAttention, withOther } from '../../.shared/queue.ts';
 import { idleSummary, stuckItems } from '../../.shared/stuck.ts';
+import { type RulingRequirements, withRequirements } from '../../.shared/requirements.ts';
 import { updateClaimed } from '../../.shared/workitem.ts';
 
 interface RouteOutput {
@@ -34,6 +35,8 @@ interface RouteOutput {
   readonly ready_head?: string | null;
   readonly brief: string;
   readonly reason: string;
+  /** What the issue's dated scope sections require of the pull request, as route read them. */
+  readonly requirements: RulingRequirements;
   readonly attention: BuildAttention | null;
 }
 
@@ -238,7 +241,7 @@ function main(): void {
     links,
   };
   updateClaimed(item, runId, doc =>
-    withBuild(doc, {
+    withBuild(route === null ? doc : withRequirements(doc, route.requirements), {
       at,
       run_id: runId,
       round,

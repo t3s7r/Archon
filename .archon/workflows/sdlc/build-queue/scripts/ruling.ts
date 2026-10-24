@@ -4,10 +4,8 @@
  * The answer is one of the declared choices, so its effect is read from the choice,
  * never from the answer's text. The choice's ruling and the person's words are written
  * into the issue body as one dated "Current scope" section and read back, so the next
- * run and its review read the ruling as the contract. The choice's declared requirements,
- * how the pull request links its issue and which reruns it needs, are recorded on the
- * work item, so delivery and the merge queue act on them as typed values. Then the answer
- * is recorded on the work item, which says what happens next, and the claim is released. A `continue` then
+ * run and its review read the ruling as the contract. Then the answer is recorded on the
+ * work item, which says what happens next, and the claim is released. A `continue` then
  * starts the item's next build-queue run at once, on the run config and input selections
  * this run started with; if that launch fails, the item waits for the next queue run as before.
  *
@@ -22,7 +20,6 @@ import { emit, nullableJson, refuse, text, trimmed } from '../../.shared/io.ts';
 import { type BuildQueueSelections, launchNextRound } from '../../.shared/launch.ts';
 import { appendSection } from '../../.shared/issue.ts';
 import { chosen, rulingHeading } from '../../.shared/queue.ts';
-import { withRequirements } from '../../.shared/requirements.ts';
 import { updateClaimed } from '../../.shared/workitem.ts';
 
 interface Asked {
@@ -62,7 +59,7 @@ function main(): void {
       ? `${asked.brief}\n\nThe maintainer chose "${choice.label}": ${choice.does}${heading === '' ? '' : ` The ruling is the issue body's "${heading}" section, which is part of the contract.`}`
       : '';
   updateClaimed(item, runId, doc =>
-    withBuild(choice.requires === null ? doc : withRequirements(doc, choice.requires), {
+    withBuild(doc, {
       at,
       run_id: runId,
       round: null,
